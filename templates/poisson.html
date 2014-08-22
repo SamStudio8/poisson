@@ -1,0 +1,31 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <title>Poisson</title>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.1/moment.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function(){
+            var socket = io.connect('http://' + document.domain + ':' + location.port + '/poisson');
+            socket.emit('connect');
+
+            socket.on('new-observation', function(msg) {
+                $('#event-count').text(msg.count);
+                $('#last-event').text(moment(msg.last).fromNow());
+                $('#timespan').text(moment(msg.timespan).fromNow());
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Poisson</h1>
+    <h2>#Events</h2>
+    <p id="event-count">{{ count }}</p>
+    <h2>Last Event</h2>
+    <p id="last-event"></p>
+    <h2>Timespan</h2>
+    <p id="timespan"></p>
+</body>
+</html>
