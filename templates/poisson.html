@@ -14,12 +14,22 @@
     <script type="text/javascript">
         $(document).ready(function(){
             var socket = io.connect('http://' + document.domain + ':' + location.port + '/poisson');
-            socket.emit('connect');
+            var me = Math.round(Math.random() * 1000);
+            socket.emit('connected', { "id": me });
 
-            var event_flags = {
-                "event": 0
-            };
-            var events = ["generic event"];
+            var events;
+            var event_flags = {};
+            socket.on('events', function(msg) {
+                if (msg.id == me){
+                    events = msg.event_members
+                    event_flags = msg.event_flags
+
+                    plot_axis("top");
+                    plot_horizons();
+                    plot_axis("bottom");
+                }
+            });
+
             socket.on('new-observation', function(msg) {
                 $('#event-count').text(msg.count);
                 $('#last-event').text(moment(msg.last, "X").fromNow());
@@ -57,12 +67,12 @@
                     .size(960)  // n
                     .step(1e3); // Interval width
 
-            function plot_axis(){
+            function plot_axis(orient){
                 // Plot the event graph axis with d3
                 d3.select("#event-graph").call(function(div) {
                     div.append("div")
                         .attr("class", "axis")
-                        .call(context.axis().orient("top"));
+                        .call(context.axis().orient(orient));
                 });
             }
 
@@ -80,8 +90,6 @@
                 });
             }
 
-            plot_axis();
-            plot_horizons();
         });
     </script>
 </head>

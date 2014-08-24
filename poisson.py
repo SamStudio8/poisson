@@ -44,9 +44,22 @@ def data(event_name):
             namespace="/poisson")
     return "OK"
 
-@socketio.on('connect', namespace='/poisson')
-def test_connect():
-    print "Connected"
+@socketio.on('connected', namespace='/poisson')
+def client_connected(message):
+    # NOTE sets are not JSON serializable
+    members = list(r_conn.smembers("events"))
+    flags = {}
+    for m in members:
+        flags[m] = 0
+
+    socketio.emit('events',
+            {
+                'id': message["id"],
+                'event_members': list(members),
+                'event_flags': flags
+            },
+            namespace="/poisson")
+    print ("Client %s Connected. Sent event list." % message["id"])
 
 if __name__ == '__main__':
     now = datetime.now()
@@ -59,7 +72,7 @@ if __name__ == '__main__':
 
     # Redis event set
     r_conn.delete("events")
-    r_conn.sadd("events", "event")
+    r_conn.sadd("events", "generic")
 
     # Launch app
     #app.debug = True
