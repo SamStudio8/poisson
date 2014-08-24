@@ -16,12 +16,20 @@
             var socket = io.connect('http://' + document.domain + ':' + location.port + '/poisson');
             socket.emit('connect');
 
-            var flag = 0;
+            var event_flags = {
+                "event": 0
+            };
+            var events = ["generic event"];
             socket.on('new-observation', function(msg) {
                 $('#event-count').text(msg.count);
                 $('#last-event').text(moment(msg.last, "X").fromNow());
                 $('#timespan').text(moment(msg.timespan, "X").fromNow());
-                flag = 1;
+                event_flags[msg.event_name] = 1;
+            });
+            socket.on('new-event', function(msg) {
+                events.push(msg.event_name);
+                event_flags[msg.event_name] = 0;
+                plot_horizons();
             });
 
             // Fetch event data
@@ -37,8 +45,8 @@
 
                     while (last < stop) {
                         last += step;
-                        values.push(flag);
-                        flag = 0;
+                        values.push(event_flags[name]);
+                        event_flags[name] = 0;
                     }
                     callback(null, values = values.slice((start - stop) / step));
                 }, name);
@@ -48,24 +56,32 @@
             var context = cubism.context()
                     .size(960)  // n
                     .step(1e3); // Interval width
-            var events = ["event"];
 
+            function plot_axis(){
+                // Plot the event graph axis with d3
+                d3.select("#event-graph").call(function(div) {
+                    div.append("div")
+                        .attr("class", "axis")
+                        .call(context.axis().orient("top"));
+                });
+            }
 
-            // Plot the event graph with d3
-            d3.select("#event-graph").call(function(div) {
-                div.append("div")
-                    .attr("class", "axis")
-                    .call(context.axis().orient("top"));
+            function plot_horizons(){
+                // Plot the event graph axis with d3
+                d3.select("#event-graph").call(function(div) {
+                    div.selectAll(".horizon")
+                        .data(events.map(fetch_event))
+                        .enter().append("div")
+                        .attr("class", "horizon")
+                        .call(context.horizon()
+                            .height(100)
+                            .extent([0, 1])
+                        );
+                });
+            }
 
-                div.selectAll(".horizon")
-                    .data(events.map(fetch_event))
-                    .enter().append("div")
-                    .attr("class", "horizon")
-                    .call(context.horizon()
-                        .height(100)
-                        .extent([0, 1])
-                    );
-            });
+            plot_axis();
+            plot_horizons();
         });
     </script>
 </head>

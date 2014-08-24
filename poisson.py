@@ -14,17 +14,30 @@ def home():
     return render_template('poisson.html',
             count=r_conn.get("events-observed"))
 
-@app.route('/data')
-def data():
+@app.route('/data/<event_name>')
+def data(event_name):
     now = datetime.now()
     timestamp = int(time.mktime(now.timetuple()))
 
+    if event_name not in r_conn.smembers("events"):
+        socketio.emit('new-event',
+                {
+                    'event_name': event_name,
+                },
+                namespace="/poisson")
+        r_conn.sadd("events", event_name)
+        r_conn.set(event_name, 0)
+
+    # Increment counters and update timestamp
+    r_conn.incr(event_name)
     r_conn.incr("events-observed")
     r_conn.set("last-event", timestamp)
 
+    # Announce new observation to clients
     socketio.emit('new-observation',
             {
                 'data': 1,
+                'event_name': event_name,
                 'count': r_conn.get("events-observed"),
                 'timespan': r_conn.get("first-event")
             },
@@ -43,6 +56,10 @@ if __name__ == '__main__':
     r_conn = Redis("localhost")
     r_conn.set("events-observed", 0)
     r_conn.set("first-event", timestamp)
+
+    # Redis event set
+    r_conn.delete("events")
+    r_conn.sadd("events", "event")
 
     # Launch app
     #app.debug = True
