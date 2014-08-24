@@ -1,7 +1,8 @@
 Poisson
 =======
 
-A very basic `Flask` application to explore the magic of the Poisson Distribution.
+A very basic `Flask` application sporting the beauty of `Cubism` to explore
+the magic of the Poisson Distribution.
 
 ## Requirements
 
