@@ -13,8 +13,9 @@
 
             socket.on('new-observation', function(msg) {
                 $('#event-count').text(msg.count);
-                $('#last-event').text(moment(msg.last).fromNow());
-                $('#timespan').text(moment(msg.timespan).fromNow());
+                $('#last-event').text(moment(msg.last, "X").fromNow());
+                $('#timespan').text(moment(msg.timespan, "X").fromNow());
+                alert(msg.timespan);
             });
         });
     </script>
