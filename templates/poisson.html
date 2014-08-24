@@ -4,17 +4,67 @@
     <title>Poisson</title>
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+
     <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.1/moment.js"></script>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.11/d3.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/cubism/1.6.0/cubism.v1.js"></script>
+    <link href="//square.github.com/cubism/style.css" rel="stylesheet"/>
 
     <script type="text/javascript">
         $(document).ready(function(){
             var socket = io.connect('http://' + document.domain + ':' + location.port + '/poisson');
             socket.emit('connect');
 
+            var flag = 0;
             socket.on('new-observation', function(msg) {
                 $('#event-count').text(msg.count);
                 $('#last-event').text(moment(msg.last, "X").fromNow());
                 $('#timespan').text(moment(msg.timespan, "X").fromNow());
+                flag = 1;
+            });
+
+            // Fetch event data
+            function fetch_event(name) {
+                var value = 0,
+                    values = [],
+                    i = 0,
+                    last;
+                return context.metric(function(start, stop, step, callback) {
+                    start = +start, stop = +stop;
+
+                    if (isNaN(last)) last = start;
+
+                    while (last < stop) {
+                        last += step;
+                        values.push(flag);
+                        flag = 0;
+                    }
+                    callback(null, values = values.slice((start - stop) / step));
+                }, name);
+            }
+
+            // Init Cubism Context
+            var context = cubism.context()
+                    .size(960)  // n
+                    .step(1e3); // Interval width
+            var events = ["event"];
+
+
+            // Plot the event graph with d3
+            d3.select("#event-graph").call(function(div) {
+                div.append("div")
+                    .attr("class", "axis")
+                    .call(context.axis().orient("top"));
+
+                div.selectAll(".horizon")
+                    .data(events.map(fetch_event))
+                    .enter().append("div")
+                    .attr("class", "horizon")
+                    .call(context.horizon()
+                        .height(100)
+                        .extent([0, 1])
+                    );
             });
         });
     </script>
@@ -27,5 +77,7 @@
     <p id="last-event"></p>
     <h2>Timespan</h2>
     <p id="timespan"></p>
+    <div id="event-graph"></div>
+    <p>Events received since page load.</p>
 </body>
 </html>
