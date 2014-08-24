@@ -69,7 +69,7 @@
 
             function plot_axis(orient){
                 // Plot the event graph axis with d3
-                d3.select("#event-graph").call(function(div) {
+                d3.select("#event-graph-axis-"+orient).call(function(div) {
                     div.append("div")
                         .attr("class", "axis")
                         .call(context.axis().orient(orient));
@@ -101,7 +101,9 @@
     <p id="last-event"></p>
     <h2>Timespan</h2>
     <p id="timespan"></p>
+    <div id="event-graph-axis-top"></div>
     <div id="event-graph"></div>
+    <div id="event-graph-axis-bottom"></div>
     <p>Events received since page load.</p>
 </body>
 </html>
