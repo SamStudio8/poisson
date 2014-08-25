@@ -84,6 +84,7 @@
                         .enter().append("div")
                         .attr("class", "horizon")
                         .call(context.horizon()
+                            .format("")
                             .height(100)
                             .extent([0, 1])
                         );
