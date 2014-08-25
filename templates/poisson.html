@@ -109,6 +109,12 @@
                 newly_connected = 0;
             }
 
+            // Humanise initial timestamps
+            if ($('#last-event').text() != "Never"){
+                $('#last-event').text(moment($('#last-event').text(), "X").fromNow());
+            }
+            $('#timespan').text(moment($('#timespan').text(), "X").fromNow());
+
         });
     </script>
 </head>
@@ -117,9 +123,9 @@
     <h2>#Events</h2>
     <p id="event-count">{{ count }}</p>
     <h2>Last Event</h2>
-    <p id="last-event"></p>
+    <p id="last-event">{{ last_event }}</p>
     <h2>Timespan</h2>
-    <p id="timespan"></p>
+    <p id="timespan">{{ first_event }}</p>
     <div id="event-graph-axis-top"></div>
     <div id="event-graph"></div>
     <div id="event-graph-axis-bottom"></div>

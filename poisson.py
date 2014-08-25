@@ -13,8 +13,13 @@ STEP_SIZE = 960 # Number of events to display (send to client) on load
 
 @app.route('/')
 def home():
+    last_event = r_conn.get("last-event")
+    if last_event is None:
+        last_event = "Never"
     return render_template('poisson.html',
-            count=r_conn.get("events-observed"))
+            count=r_conn.get("events-observed"),
+            last_event=last_event,
+            first_event=r_conn.get("first-event"))
 
 @app.route('/data/<event_name>')
 def data(event_name):
@@ -97,6 +102,7 @@ if __name__ == '__main__':
     r_conn = Redis("localhost")
     r_conn.set("events-observed", 0)
     r_conn.set("first-event", timestamp)
+    r_conn.delete("last-event")
 
     # Redis event set
     r_conn.delete("events")
