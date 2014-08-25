@@ -9,6 +9,8 @@ from redis import Redis
 app = Flask(__name__)
 socketio = SocketIO(app)
 
+STEP_SIZE = 960 # Number of events to display (send to client) on load
+
 @app.route('/')
 def home():
     return render_template('poisson.html',
@@ -27,11 +29,15 @@ def data(event_name):
                 namespace="/poisson")
         r_conn.sadd("events", event_name)
         r_conn.set(event_name, 0)
+        r_conn.delete(event_name+"_set")
 
     # Increment counters and update timestamp
     r_conn.incr(event_name)
     r_conn.incr("events-observed")
     r_conn.set("last-event", timestamp)
+
+    # Push new timestamp record to this event's member list
+    r_conn.sadd(event_name+"_set", timestamp)
 
     # Announce new observation to clients
     socketio.emit('new-observation',
@@ -59,7 +65,29 @@ def client_connected(message):
                 'event_flags': flags
             },
             namespace="/poisson")
-    print ("Client %s Connected. Sent event list." % message["id"])
+
+    now_stamp = int(time.mktime(datetime.now().timetuple()))
+    max_past = now_stamp - STEP_SIZE
+    observations = {}
+    for m in members:
+        m_obs = sorted(r_conn.smembers(m+"_set"))
+
+        # TODO Ideally we'd like to send over sparse lists
+        observations[m] = [0] * STEP_SIZE
+        for o in m_obs:
+            o = int(o)
+            observations[m][now_stamp - o] = 1
+            if o < max_past:
+                break
+        observations[m] = observations[m][::-1]
+
+    socketio.emit('observations',
+            {
+                'id': message["id"],
+                'observations' : observations
+            },
+            namespace="/poisson")
+    print ("Client %s Connected. Sent event list and observations." % message["id"])
 
 if __name__ == '__main__':
     now = datetime.now()
@@ -72,7 +100,6 @@ if __name__ == '__main__':
 
     # Redis event set
     r_conn.delete("events")
-    r_conn.sadd("events", "generic")
 
     # Launch app
     #app.debug = True

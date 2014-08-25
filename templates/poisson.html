@@ -23,6 +23,15 @@
                 if (msg.id == me){
                     events = msg.event_members
                     event_flags = msg.event_flags
+                }
+            });
+
+            var newly_connected;
+            var observations;
+            socket.on('observations', function(msg) {
+                if (msg.id == me){
+                    newly_connected = 1;
+                    observations = msg.observations;
 
                     plot_axis("top");
                     plot_horizons();
@@ -44,14 +53,22 @@
 
             // Fetch event data
             function fetch_event(name) {
-                var value = 0,
-                    values = [],
-                    i = 0,
-                    last;
+                if (newly_connected == 1) {
+                    var values = observations[name];
+                }
+                else {
+                    var values = [];
+                }
                 return context.metric(function(start, stop, step, callback) {
-                    start = +start, stop = +stop;
+                    if (newly_connected == 1){
+                        var last = stop;
+                    }
+                    else{
+                        var last = start;
+                    }
 
-                    if (isNaN(last)) last = start;
+                    start = +start;
+                    stop = +stop;
 
                     while (last < stop) {
                         last += step;
@@ -89,6 +106,7 @@
                             .extent([0, 1])
                         );
                 });
+                newly_connected = 0;
             }
 
         });
