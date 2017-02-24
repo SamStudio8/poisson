@@ -1,6 +1,8 @@
-<!DOCTYPE HTML>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title>Poisson</title>
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
@@ -9,9 +11,22 @@
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.11/d3.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/cubism/1.6.0/cubism.v1.js"></script>
-    <link href="https://square.github.io/cubism/style.css" rel="stylesheet" />
 
+    <link href="https://square.github.io/cubism/style.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <style>
+        body {
+            margin-top: 30px;
+            width: 100%;
+        }
+        h2, h3, h4 {
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+        h3 {
+            margin-bottom: 25px;
+        }
+    </style>
 
     <script type="text/javascript">
         var socket = io.connect('//' + document.domain + ':' + location.port + '/poisson');
@@ -118,21 +133,22 @@
     </script>
 </head>
 <body>
+  <div class="container">
   <div class="row">
-    <div class="col-md-3">
-        <h1>Poisson</h1>
-        <h2>#Events</h2>
-        <p id="event-count">{{ count }}</p>
-        <h2>Last Event</h2>
-        <p id="last-event">{{ last_event }}</p>
-        <h2>Timespan</h2>
-        <p id="timespan">{{ first_event }}</p>
+    <div class="col-md-2">
+        <h4>Events</h4>
+        <h3><p id="event-count">{{ count }}</p></h3>
+        <h4>Last Event</h4>
+        <h3><p id="last-event">{{ last_event }}</p></h3>
+        <h4>Timespan</h4>
+        <h3><p id="timespan">{{ first_event }}</p></h3>
     </div>
-    <div class="col-md-9">
+    <div class="col-md-10">
         <div id="event-graph-axis-top"></div>
         <div id="event-graph"></div>
         <div id="event-graph-axis-bottom"></div>
     </div>
+  </div>
   </div>
   <script>
     // Humanise initial timestamps
