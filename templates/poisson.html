@@ -11,6 +11,8 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/cubism/1.6.0/cubism.v1.js"></script>
     <link href="https://square.github.io/cubism/style.css" rel="stylesheet" />
 
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
     <script type="text/javascript">
         var socket = io.connect('//' + document.domain + ':' + location.port + '/poisson');
         var me = Math.round(Math.random() * 1000);
@@ -116,23 +118,28 @@
     </script>
 </head>
 <body>
-    <h1>Poisson</h1>
-    <h2>#Events</h2>
-    <p id="event-count">{{ count }}</p>
-    <h2>Last Event</h2>
-    <p id="last-event">{{ last_event }}</p>
-    <h2>Timespan</h2>
-    <p id="timespan">{{ first_event }}</p>
-    <div id="event-graph-axis-top"></div>
-    <div id="event-graph"></div>
-    <div id="event-graph-axis-bottom"></div>
-
-    <script>
-        // Humanise initial timestamps
-        if ($('#last-event').text() != "Never"){
-            $('#last-event').text(moment($('#last-event').text(), "X").fromNow());
-        }
-        $('#timespan').text(moment($('#timespan').text(), "X").fromNow());
-    </script>
+  <div class="row">
+    <div class="col-md-3">
+        <h1>Poisson</h1>
+        <h2>#Events</h2>
+        <p id="event-count">{{ count }}</p>
+        <h2>Last Event</h2>
+        <p id="last-event">{{ last_event }}</p>
+        <h2>Timespan</h2>
+        <p id="timespan">{{ first_event }}</p>
+    </div>
+    <div class="col-md-9">
+        <div id="event-graph-axis-top"></div>
+        <div id="event-graph"></div>
+        <div id="event-graph-axis-bottom"></div>
+    </div>
+  </div>
+  <script>
+    // Humanise initial timestamps
+    if ($('#last-event').text() != "Never"){
+        $('#last-event').text(moment($('#last-event').text(), "X").fromNow());
+    }
+    $('#timespan').text(moment($('#timespan').text(), "X").fromNow());
+  </script>
 </body>
 </html>
