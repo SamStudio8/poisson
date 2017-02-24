@@ -29,7 +29,7 @@ def add_observation(event_name, event_value):
     timestamp = int(time.mktime(now.timetuple()))
 
     if event_name not in r_conn.smembers("events"):
-        emit('new-event', {
+        socketio.emit('new-event', {
             'event_name': event_name,
         }, namespace="/poisson")
         # Add the set
@@ -44,7 +44,7 @@ def add_observation(event_name, event_value):
     r_conn.zadd(event_name+"_ts", timestamp, event_value)
 
     # Announce new observation to clients
-    emit('new-observation', {
+    socketio.emit('new-observation', {
                 'data': event_value,
                 'event_name': event_name,
                 'count': r_conn.get("events-observed"),
@@ -73,7 +73,8 @@ def process_json():
 def data(event_name, value):
     try:
         add_observation(event_name, value)
-    except Exception:
+    except Exception as e:
+        print(e)
         return Response(json.dumps({"status": "NOTOK"}), status=400, mimetype='application/json')
     return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
 
@@ -93,7 +94,7 @@ def client_connected(message):
     for m in members:
         flags[m] = 0
 
-    emit('events', {
+    socketio.emit('events', {
         'id': message["id"],
         'event_members': list(members),
         'event_flags': flags
@@ -112,7 +113,7 @@ def client_connected(message):
                 pass
         observations[event_name] = observations[event_name][::-1]
 
-    emit('observations', {
+    socketio.emit('observations', {
         'id': message["id"],
         'observations' : observations
     }, namespace="/poisson")

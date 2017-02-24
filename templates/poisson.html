@@ -12,7 +12,7 @@
     <link href="https://square.github.io/cubism/style.css" rel="stylesheet" />
 
     <script type="text/javascript">
-        var socket = io.connect('http://' + document.domain + ':' + location.port + '/poisson');
+        var socket = io.connect('//' + document.domain + ':' + location.port + '/poisson');
         var me = Math.round(Math.random() * 1000);
         socket.emit('connected', { "id": me });
 
