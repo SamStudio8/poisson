@@ -9,10 +9,10 @@
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.4.11/d3.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/cubism/1.6.0/cubism.v1.js"></script>
-    <link href="//square.github.com/cubism/style.css" rel="stylesheet"/>
+    <link href="https://square.github.io/cubism/style.css" rel="stylesheet" />
 
     <script type="text/javascript">
-        var socket = io.connect('http://' + document.domain + ':' + location.port + '/poisson');
+        var socket = io.connect('https://' + document.domain + ':' + location.port + '/poisson');
         var me = Math.round(Math.random() * 1000);
         socket.emit('connected', { "id": me });
 

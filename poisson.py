@@ -3,12 +3,13 @@ import time
 import json
 
 from flask import Flask, render_template, request, Response
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO as SIO
+from flask_socketio import emit
 
 from redis import Redis
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SIO(app)
 
 STEP_SIZE = 960 # Number of events to display (send to client) on load
 
@@ -28,11 +29,9 @@ def add_observation(event_name, event_value):
     timestamp = int(time.mktime(now.timetuple()))
 
     if event_name not in r_conn.smembers("events"):
-        socketio.emit('new-event',
-                {
-                    'event_name': event_name,
-                },
-                namespace="/poisson")
+        socketio.emit('new-event', {
+            'event_name': event_name,
+        }, namespace="/poisson")
         # Reset and add the set
         r_conn.sadd("events", event_name)
         r_conn.set(event_name, 0)
@@ -82,6 +81,14 @@ def data(event_name, value):
         return Response(json.dumps({"status": "NOTOK"}), status=400, mimetype='application/json')
     return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
 
+@app.route('/reset/')
+def reset():
+    r_conn.set("events-observed", 0)
+    r_conn.set("first-event", timestamp)
+    r_conn.delete("last-event")
+    r_conn.delete("events")
+    return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
+
 @socketio.on('connected', namespace='/poisson')
 def client_connected(message):
     # NOTE sets are not JSON serializable
@@ -90,13 +97,11 @@ def client_connected(message):
     for m in members:
         flags[m] = 0
 
-    socketio.emit('events',
-            {
-                'id': message["id"],
-                'event_members': list(members),
-                'event_flags': flags
-            },
-            namespace="/poisson")
+    socketio.emit('events', {
+        'id': message["id"],
+        'event_members': list(members),
+        'event_flags': flags
+    }, namespace="/poisson")
 
     now_stamp = int(time.mktime(datetime.now().timetuple()))
     max_past = now_stamp - STEP_SIZE
@@ -112,27 +117,21 @@ def client_connected(message):
                 break
         observations[m] = observations[m][::-1]
 
-    socketio.emit('observations',
-            {
-                'id': message["id"],
-                'observations' : observations
-            },
-            namespace="/poisson")
+    socketio.emit('observations', {
+        'id': message["id"],
+        'observations' : observations
+    }, namespace="/poisson")
     print ("Client %s Connected. Sent event list and observations." % message["id"])
 
+
+# Do it
+now = datetime.now()
+timestamp = int(time.mktime(now.timetuple()))
+
+# Setup Redis
+r_conn = Redis("localhost")
+
 if __name__ == '__main__':
-    now = datetime.now()
-    timestamp = int(time.mktime(now.timetuple()))
-
-    # Setup Redis
-    r_conn = Redis("localhost")
-    r_conn.set("events-observed", 0)
-    r_conn.set("first-event", timestamp)
-    r_conn.delete("last-event")
-
-    # Redis event set
-    r_conn.delete("events")
-
     # Launch app
     #app.debug = True
-    socketio.run(app, host='0.0.0.0')
+    socketio.run(app)
