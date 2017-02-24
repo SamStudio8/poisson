@@ -13,8 +13,8 @@ from redis import Redis
 app = Flask(__name__)
 socketio = SIO(app)
 
-MAX_EVENTS = 2880 # Number of events to display (send to client) on load
-STEP_seconds = 30
+MAX_EVENTS = 720 # Number of events to display (send to client) on load
+STEP_seconds = 2*60
 
 @app.route('/')
 def home():
