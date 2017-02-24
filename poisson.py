@@ -1,6 +1,8 @@
 from datetime import datetime
+from datetime import timedelta
 import time
 import json
+import math
 
 from flask import Flask, render_template, request, Response
 from flask_socketio import SocketIO as SIO
@@ -11,7 +13,8 @@ from redis import Redis
 app = Flask(__name__)
 socketio = SIO(app)
 
-STEP_SIZE = 960 # Number of events to display (send to client) on load
+MAX_EVENTS = 960 # Number of events to display (send to client) on load
+STEP_seconds = 3000
 
 @app.route('/')
 def home():
@@ -105,15 +108,21 @@ def client_connected(message):
         'event_flags': flags
     }, namespace="/poisson")
 
-    now_stamp = int(time.mktime(datetime.now().timetuple()))
-    max_past = now_stamp - STEP_SIZE
+    current_dt = datetime.now()
+    current_dt.replace(second=int(math.floor(current_dt.second/30)*30), microsecond=0)
+    resolution = timedelta(seconds=30)
+    current_ts = int(current_dt.strftime('%s'))
+
     observations = {}
     for event_name in members:
         # TODO Ideally we'd like to send over sparse lists
-        observations[event_name] = [0] * STEP_SIZE
+        observations[event_name] = [0] * MAX_EVENTS
         for event_ts, event_value in r_conn.zrange(event_name+"_ts", 0, -1, withscores=True):
+            step_bin = int(math.floor((current_ts - int(event_ts)) / STEP_seconds))
+            if step_bin < 0:
+                continue
             try:
-                observations[event_name][now_stamp - int(event_ts)] = int(event_value)
+                observations[event_name][step_bin] = int(event_value)
             except IndexError:
                 pass
         observations[event_name] = observations[event_name][::-1]
