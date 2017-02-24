@@ -101,11 +101,18 @@
                     .attr("class", "horizon")
                     .call(context.horizon()
                         .format("")
-                        .height(100)
-                    );
+                        .height(75)
+                        .format(d3.format())
+                    )
+                    .call(context.rule());
             });
             newly_connected = 0;
         }
+
+        context.on("focus", function(i) {
+            d3.selectAll(".value").style("right", i == null ? null : context.size() - i + "px");
+        });
+
     </script>
 </head>
 <body>
