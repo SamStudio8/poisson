@@ -14,7 +14,7 @@ app = Flask(__name__)
 socketio = SIO(app)
 
 MAX_EVENTS = 960 # Number of events to display (send to client) on load
-STEP_seconds = 3000
+STEP_seconds = 30
 
 @app.route('/')
 def home():
