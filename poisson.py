@@ -34,6 +34,7 @@ def add_observation(event_name, event_value):
         }, namespace="/poisson")
         # Add the set
         r_conn.sadd("events", event_name)
+        #print("[EVE] %s" % (event_name))
 
     # Increment counters and update timestamp
     r_conn.incr(event_name)
@@ -50,6 +51,7 @@ def add_observation(event_name, event_value):
                 'count': r_conn.get("events-observed"),
                 'timespan': r_conn.get("first-event")
     }, namespace="/poisson")
+    #print("[OBS] %s:%s" % (event_name, str(event_value)))
 
 @app.route('/json/', methods=["POST"])
 def process_json():
@@ -106,7 +108,7 @@ def client_connected(message):
     for event_name in members:
         # TODO Ideally we'd like to send over sparse lists
         observations[event_name] = [0] * STEP_SIZE
-        for event_ts, event_value in r_conn.zrange(m+"_ts", 0, -1, withscores=True):
+        for event_ts, event_value in r_conn.zrange(event_name+"_ts", 0, -1, withscores=True):
             try:
                 observations[event_name][now_stamp - int(event_ts)] = int(event_value)
             except IndexError:
