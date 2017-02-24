@@ -1,8 +1,9 @@
 from datetime import datetime
 import time
+import json
 
-from flask import Flask, render_template
-from flask.ext.socketio import SocketIO, emit
+from flask import Flask, render_template, request, Response
+from flask_socketio import SocketIO, emit
 
 from redis import Redis
 
@@ -21,8 +22,8 @@ def home():
             last_event=last_event,
             first_event=r_conn.get("first-event"))
 
-@app.route('/data/<event_name>')
-def data(event_name):
+
+def add_observation(event_name, event_value):
     now = datetime.now()
     timestamp = int(time.mktime(now.timetuple()))
 
@@ -32,6 +33,7 @@ def data(event_name):
                     'event_name': event_name,
                 },
                 namespace="/poisson")
+        # Reset and add the set
         r_conn.sadd("events", event_name)
         r_conn.set(event_name, 0)
         r_conn.delete(event_name+"_set")
@@ -42,18 +44,43 @@ def data(event_name):
     r_conn.set("last-event", timestamp)
 
     # Push new timestamp record to this event's member list
-    r_conn.sadd(event_name+"_set", timestamp)
+    r_conn.sadd(event_name+"_set", (timestamp, event_value))
 
     # Announce new observation to clients
     socketio.emit('new-observation',
             {
-                'data': 1,
+                'data': event_value,
                 'event_name': event_name,
                 'count': r_conn.get("events-observed"),
                 'timespan': r_conn.get("first-event")
             },
             namespace="/poisson")
-    return "OK"
+
+@app.route('/json/', methods=["POST"])
+def process_json():
+    payload = request.get_json()
+    if not payload:
+        return Response(json.dumps({"status": "NOTOK"}), status=400, mimetype='application/json')
+
+    for key in payload:
+        try:
+            add_observation(key, float(payload[key]))
+        except ValueError:
+            # "OH WELL THAT'S IT, ANOTHER OWL BASED FUCK UP, SAM"
+            pass
+        except Exception as e:
+            print e
+            return Response(json.dumps({"status": "NOTOK"}), status=400, mimetype='application/json')
+    return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
+
+@app.route('/data/<event_name>', defaults={'value': 1})
+@app.route('/data/<event_name>/<value>')
+def data(event_name, value):
+    try:
+        add_observation(event_name, value)
+    except Exception:
+        return Response(json.dumps({"status": "NOTOK"}), status=400, mimetype='application/json')
+    return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
 
 @socketio.on('connected', namespace='/poisson')
 def client_connected(message):
@@ -79,10 +106,9 @@ def client_connected(message):
 
         # TODO Ideally we'd like to send over sparse lists
         observations[m] = [0] * STEP_SIZE
-        for o in m_obs:
-            o = int(o)
-            observations[m][now_stamp - o] = 1
-            if o < max_past:
+        for o_timestamp, o_value in m_obs:
+            observations[m][now_stamp - int(o_timestamp)] = o_value
+            if int(o_timestamp) < max_past:
                 break
         observations[m] = observations[m][::-1]
 
@@ -109,5 +135,4 @@ if __name__ == '__main__':
 
     # Launch app
     #app.debug = True
-    app.host = '0.0.0.0'
-    socketio.run(app)
+    socketio.run(app, host='0.0.0.0')

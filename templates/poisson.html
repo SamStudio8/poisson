@@ -3,7 +3,7 @@
 <head>
     <title>Poisson</title>
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.1/moment.js"></script>
 
@@ -12,110 +12,100 @@
     <link href="//square.github.com/cubism/style.css" rel="stylesheet"/>
 
     <script type="text/javascript">
-        $(document).ready(function(){
-            var socket = io.connect('http://' + document.domain + ':' + location.port + '/poisson');
-            var me = Math.round(Math.random() * 1000);
-            socket.emit('connected', { "id": me });
+        var socket = io.connect('http://' + document.domain + ':' + location.port + '/poisson');
+        var me = Math.round(Math.random() * 1000);
+        socket.emit('connected', { "id": me });
 
-            var events;
-            var event_flags = {};
-            socket.on('events', function(msg) {
-                if (msg.id == me){
-                    events = msg.event_members
-                    event_flags = msg.event_flags
-                }
-            });
-
-            var newly_connected;
-            var observations;
-            socket.on('observations', function(msg) {
-                if (msg.id == me){
-                    newly_connected = 1;
-                    observations = msg.observations;
-
-                    plot_axis("top");
-                    plot_horizons();
-                    plot_axis("bottom");
-                }
-            });
-
-            socket.on('new-observation', function(msg) {
-                $('#event-count').text(msg.count);
-                $('#last-event').text(moment(msg.last, "X").fromNow());
-                $('#timespan').text(moment(msg.timespan, "X").fromNow());
-                event_flags[msg.event_name] = 1;
-            });
-            socket.on('new-event', function(msg) {
-                events.push(msg.event_name);
-                event_flags[msg.event_name] = 0;
-                plot_horizons();
-            });
-
-            // Fetch event data
-            function fetch_event(name) {
-                if (newly_connected == 1) {
-                    var values = observations[name];
-                }
-                else {
-                    var values = [];
-                }
-                return context.metric(function(start, stop, step, callback) {
-                    if (newly_connected == 1){
-                        var last = stop;
-                    }
-                    else{
-                        var last = start;
-                    }
-
-                    start = +start;
-                    stop = +stop;
-
-                    while (last < stop) {
-                        last += step;
-                        values.push(event_flags[name]);
-                        event_flags[name] = 0;
-                    }
-                    callback(null, values = values.slice((start - stop) / step));
-                }, name);
+        var events;
+        var event_flags = {};
+        socket.on('events', function(msg) {
+            if (msg.id == me){
+                events = msg.event_members
+                event_flags = msg.event_flags
             }
-
-            // Init Cubism Context
-            var context = cubism.context()
-                    .size(960)  // n
-                    .step(1e3); // Interval width
-
-            function plot_axis(orient){
-                // Plot the event graph axis with d3
-                d3.select("#event-graph-axis-"+orient).call(function(div) {
-                    div.append("div")
-                        .attr("class", "axis")
-                        .call(context.axis().orient(orient));
-                });
-            }
-
-            function plot_horizons(){
-                // Plot the event graph axis with d3
-                d3.select("#event-graph").call(function(div) {
-                    div.selectAll(".horizon")
-                        .data(events.map(fetch_event))
-                        .enter().append("div")
-                        .attr("class", "horizon")
-                        .call(context.horizon()
-                            .format("")
-                            .height(100)
-                            .extent([0, 1])
-                        );
-                });
-                newly_connected = 0;
-            }
-
-            // Humanise initial timestamps
-            if ($('#last-event').text() != "Never"){
-                $('#last-event').text(moment($('#last-event').text(), "X").fromNow());
-            }
-            $('#timespan').text(moment($('#timespan').text(), "X").fromNow());
-
         });
+
+        var newly_connected;
+        var observations;
+        socket.on('observations', function(msg) {
+            if (msg.id == me){
+                newly_connected = 1;
+                observations = msg.observations;
+
+                plot_axis("top");
+                plot_horizons();
+                plot_axis("bottom");
+            }
+        });
+
+        socket.on('new-observation', function(msg) {
+            $('#event-count').text(msg.count);
+            $('#last-event').text(moment(msg.last, "X").fromNow());
+            $('#timespan').text(moment(msg.timespan, "X").fromNow());
+            event_flags[msg.event_name] = msg.data;
+        });
+        socket.on('new-event', function(msg) {
+            events.push(msg.event_name);
+            event_flags[msg.event_name] = 0;
+            plot_horizons();
+        });
+
+        // Fetch event data
+        function fetch_event(name) {
+            if (newly_connected == 1) {
+                var values = observations[name];
+            }
+            else {
+                var values = [];
+            }
+            return context.metric(function(start, stop, step, callback) {
+                if (newly_connected == 1){
+                    var last = stop;
+                }
+                else{
+                    var last = start;
+                }
+
+                start = +start;
+                stop = +stop;
+
+                while (last < stop) {
+                    last += step;
+                    values.push(event_flags[name]);
+                    event_flags[name] = 0;
+                }
+                callback(null, values = values.slice((start - stop) / step));
+            }, name);
+        }
+
+        // Init Cubism Context
+        var context = cubism.context()
+                .size(960)  // n
+                .step(1e3); // Interval width
+
+        function plot_axis(orient){
+            // Plot the event graph axis with d3
+            d3.select("#event-graph-axis-"+orient).call(function(div) {
+                div.append("div")
+                    .attr("class", "axis")
+                    .call(context.axis().orient(orient));
+            });
+        }
+
+        function plot_horizons(){
+            // Plot the event graph axis with d3
+            d3.select("#event-graph").call(function(div) {
+                div.selectAll(".horizon")
+                    .data(events.map(fetch_event))
+                    .enter().append("div")
+                    .attr("class", "horizon")
+                    .call(context.horizon()
+                        .format("")
+                        .height(100)
+                    );
+            });
+            newly_connected = 0;
+        }
     </script>
 </head>
 <body>
@@ -129,5 +119,13 @@
     <div id="event-graph-axis-top"></div>
     <div id="event-graph"></div>
     <div id="event-graph-axis-bottom"></div>
+
+    <script>
+        // Humanise initial timestamps
+        if ($('#last-event').text() != "Never"){
+            $('#last-event').text(moment($('#last-event').text(), "X").fromNow());
+        }
+        $('#timespan').text(moment($('#timespan').text(), "X").fromNow());
+    </script>
 </body>
 </html>
