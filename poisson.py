@@ -29,13 +29,11 @@ def add_observation(event_name, event_value):
     timestamp = int(time.mktime(now.timetuple()))
 
     if event_name not in r_conn.smembers("events"):
-        socketio.emit('new-event', {
+        emit('new-event', {
             'event_name': event_name,
         }, namespace="/poisson")
-        # Reset and add the set
+        # Add the set
         r_conn.sadd("events", event_name)
-        r_conn.set(event_name, 0)
-        r_conn.delete(event_name+"_set")
 
     # Increment counters and update timestamp
     r_conn.incr(event_name)
@@ -43,17 +41,15 @@ def add_observation(event_name, event_value):
     r_conn.set("last-event", timestamp)
 
     # Push new timestamp record to this event's member list
-    r_conn.sadd(event_name+"_set", (timestamp, event_value))
+    r_conn.zadd(event_name+"_ts", timestamp, event_value)
 
     # Announce new observation to clients
-    socketio.emit('new-observation',
-            {
+    emit('new-observation', {
                 'data': event_value,
                 'event_name': event_name,
                 'count': r_conn.get("events-observed"),
                 'timespan': r_conn.get("first-event")
-            },
-            namespace="/poisson")
+    }, namespace="/poisson")
 
 @app.route('/json/', methods=["POST"])
 def process_json():
@@ -97,7 +93,7 @@ def client_connected(message):
     for m in members:
         flags[m] = 0
 
-    socketio.emit('events', {
+    emit('events', {
         'id': message["id"],
         'event_members': list(members),
         'event_flags': flags
@@ -106,22 +102,22 @@ def client_connected(message):
     now_stamp = int(time.mktime(datetime.now().timetuple()))
     max_past = now_stamp - STEP_SIZE
     observations = {}
-    for m in members:
-        m_obs = sorted(r_conn.smembers(m+"_set"))
-
+    for event_name in members:
         # TODO Ideally we'd like to send over sparse lists
-        observations[m] = [0] * STEP_SIZE
-        for o_timestamp, o_value in m_obs:
-            observations[m][now_stamp - int(o_timestamp)] = o_value
-            if int(o_timestamp) < max_past:
-                break
-        observations[m] = observations[m][::-1]
+        observations[event_name] = [0] * STEP_SIZE
+        for event_ts, event_value in r_conn.zrange(m+"_ts", 0, -1, withscores=True):
+            try:
+                observations[event_name][now_stamp - int(event_ts)] = int(event_value)
+            except IndexError:
+                pass
+        observations[event_name] = observations[event_name][::-1]
 
-    socketio.emit('observations', {
+    emit('observations', {
         'id': message["id"],
         'observations' : observations
     }, namespace="/poisson")
     print ("Client %s Connected. Sent event list and observations." % message["id"])
+    return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
 
 
 # Do it

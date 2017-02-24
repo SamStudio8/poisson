@@ -12,7 +12,7 @@
     <link href="https://square.github.io/cubism/style.css" rel="stylesheet" />
 
     <script type="text/javascript">
-        var socket = io.connect('https://' + document.domain + ':' + location.port + '/poisson');
+        var socket = io.connect('http://' + document.domain + ':' + location.port + '/poisson');
         var me = Math.round(Math.random() * 1000);
         socket.emit('connected', { "id": me });
 
@@ -25,11 +25,10 @@
             }
         });
 
-        var newly_connected;
+        var newly_connected = 1;
         var observations;
         socket.on('observations', function(msg) {
             if (msg.id == me){
-                newly_connected = 1;
                 observations = msg.observations;
 
                 plot_axis("top");
