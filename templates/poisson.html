@@ -79,8 +79,9 @@
 
         // Init Cubism Context
         var context = cubism.context()
-                .size(960)  // n
-                .step(1e3); // Interval width
+                .serverDelay(30 * 1000) // allow 30 seconds of collection lag
+                .step(30 * 1000) // 30s per value
+                .size(960); // fetch n values
 
         function plot_axis(orient){
             // Plot the event graph axis with d3

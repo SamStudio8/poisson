@@ -85,6 +85,9 @@ def reset():
     r_conn.set("events-observed", 0)
     r_conn.set("first-event", timestamp)
     r_conn.delete("last-event")
+    members = list(r_conn.smembers("events"))
+    for m in members:
+        r_conn.delete(m+"_ts")
     r_conn.delete("events")
     return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
 
@@ -120,7 +123,7 @@ def client_connected(message):
         'observations' : observations
     }, namespace="/poisson")
     print ("Client %s Connected. Sent event list and observations." % message["id"])
-    return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
+    #return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
 
 
 # Do it
