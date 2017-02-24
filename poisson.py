@@ -104,7 +104,7 @@ def client_connected(message):
 
     socketio.emit('events', {
         'id': message["id"],
-        'event_members': list(members),
+        'event_members': sorted(list(members)),
         'event_flags': flags
     }, namespace="/poisson")
 
