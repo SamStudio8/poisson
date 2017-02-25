@@ -3,3 +3,12 @@ EVENT_CONFIGS = {
         "extent": [0,10]
     },
 }
+
+EVENT_TRANSLATIONS = {
+    "hoot": "hoot_label",
+}
+
+EVENT_ORDER = [
+    "hoot",
+    "meow",
+]

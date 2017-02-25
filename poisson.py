@@ -10,7 +10,7 @@ from flask_socketio import emit
 
 from redis import Redis
 
-from config import EVENT_CONFIGS
+from config import EVENT_CONFIGS, EVENT_TRANSLATIONS, EVENT_ORDER
 
 app = Flask(__name__)
 socketio = SIO(app)
@@ -103,9 +103,6 @@ def reset():
 def client_connected(message):
     # NOTE sets are not JSON serializable
     members = list(r_conn.smembers("events"))
-    flags = {}
-    for m in members:
-        flags[m] = 0
 
     current_dt = datetime.now()
     current_dt.replace(second=int(math.floor(current_dt.second/30)*30), microsecond=0)
@@ -114,7 +111,26 @@ def client_connected(message):
 
     observations = {}
     mini_observations = {}
+
+    events_sorted = EVENT_ORDER[:]
+    events_seen = []
+    events_to_add = []
+
     for event_name in members:
+        if event_name not in EVENT_ORDER:
+            events_to_add.append(event_name)
+        events_seen.append(event_name)
+
+    # Remove missing events
+    missing_events = set(events_sorted) - set(events_seen)
+    for missing in missing_events:
+        events_sorted.remove(missing)
+
+    # Add missing events
+    events_sorted.extend(events_to_add)
+
+    for event_name in events_sorted:
+
         # TODO Ideally we'd like to send over sparse lists
         observations[event_name] = [0] * MAX_EVENTS
         mini_observations[event_name] = [0] * MINIMAX_EVENTS
