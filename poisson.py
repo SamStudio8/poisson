@@ -124,8 +124,11 @@ def client_connected(message):
             if step_bin < 0:
                 continue
             try:
-                observations[event_name][step_bin] = float(event_value)
-                mini_observations[event_name][mini_step_bin] = float(event_value)
+                event_value = float(event_value)
+                if event_value == 0:
+                    event_value = 0.0001
+                observations[event_name][step_bin] = event_value
+                mini_observations[event_name][mini_step_bin] = event_value
             except IndexError:
                 pass
         observations[event_name] = observations[event_name][::-1]
