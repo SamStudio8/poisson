@@ -62,11 +62,12 @@
 
                 observations = msg.observations;
                 observations_mini = msg.observations_mini;
+
+                plot_axis("top");
+                events.map(plot_horizons);
+                plot_axis("bottom");
+                newly_connected = 0;
             }
-            plot_axis("top");
-            events.map(plot_horizons);
-            plot_axis("bottom");
-            newly_connected = 0;
         });
 
         socket.on('new-observation', function(msg) {
@@ -172,7 +173,7 @@
 
         function plot_horizons(event_name){
             // Plot the event graph axis with d3
-            var colours = ["#4122BD", "#352BB6", "#2A34AF", "#1E3EA9", "#1347A2", "#08519C", "#065685", "#045C6F", "#036158", "#016742", "#006D2C", "#2F7C27", "#5E8C22", "#8E9B1E", "#BDAB19", "#EDBB15", "#E9AA16", "#E69A17", "#E38918", "#E07919", "#D96119", "#D34919", "#CD3119", "#C71A1A"];
+            var colours = ["#431FD1", "#382ED1", "#2D3DD1", "#234CD1", "#256D74", "#288F18", "#8CA71A", "#F0BF1D", "#E49C1E", "#D97A20", "#CB4D20", "#BD2020"];
             var extent = [0,100];
 
             if (event_name in event_configs){
