@@ -37,39 +37,36 @@
         var event_flags = {};
         var event_configs = {};
 
-        socket.on('events', function(msg) {
-            if (msg.id == me){
-                events = msg.event_members
-                event_flags = msg.event_flags
-                event_configs = msg.event_configs
-            }
-            for (var i = 0; i < events.length; i++) {
-                d3.select("#event-graphs").call(function(div) {
-                    div.append("div")
-                    .attr("id", "event-graph-"+events[i])
-                    .attr("class", "event-graph")
-                });
-                d3.select("#mini-event-graphs").call(function(div) {
-                    div.append("div")
-                    .attr("id", "mini-event-graph-"+events[i])
-                    .attr("class", "mini-event-graph")
-                });
-            };
-        });
-
         var newly_connected = 1;
         var observations;
         var observations_mini;
 
         socket.on('observations', function(msg) {
             if (msg.id == me){
+                events = msg.event_members
+                event_flags = msg.event_flags
+                event_configs = msg.event_configs
+
+                for (var i = 0; i < events.length; i++) {
+                    d3.select("#event-graphs").call(function(div) {
+                        div.append("div")
+                        .attr("id", "event-graph-"+events[i])
+                        .attr("class", "event-graph")
+                    });
+                    d3.select("#mini-event-graphs").call(function(div) {
+                        div.append("div")
+                        .attr("id", "mini-event-graph-"+events[i])
+                        .attr("class", "mini-event-graph")
+                    });
+                };
+
                 observations = msg.observations;
                 observations_mini = msg.observations_mini;
-
-                plot_axis("top");
-                events.map(plot_horizons);
-                plot_axis("bottom");
             }
+            plot_axis("top");
+            events.map(plot_horizons);
+            plot_axis("bottom");
+            newly_connected = 0;
         });
 
         socket.on('new-observation', function(msg) {
@@ -212,7 +209,6 @@
                     )
                     .call(mini_context.rule());
             });
-            newly_connected = 0;
         }
 
         context.on("focus", function(i) {

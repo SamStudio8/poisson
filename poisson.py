@@ -107,13 +107,6 @@ def client_connected(message):
     for m in members:
         flags[m] = 0
 
-    socketio.emit('events', {
-        'id': message["id"],
-        'event_members': sorted(list(members)),
-        'event_flags': flags,
-        'event_configs': EVENT_CONFIGS,
-    }, namespace="/poisson")
-
     current_dt = datetime.now()
     current_dt.replace(second=int(math.floor(current_dt.second/30)*30), microsecond=0)
     resolution = timedelta(seconds=30)
@@ -142,6 +135,9 @@ def client_connected(message):
         'id': message["id"],
         'observations' : observations,
         'observations_mini' : mini_observations,
+        'event_members': sorted(list(members)),
+        'event_configs': EVENT_CONFIGS,
+        'event_flags': flags,
     }, namespace="/poisson")
     print ("Client %s Connected. Sent event list and observations." % message["id"])
     #return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
