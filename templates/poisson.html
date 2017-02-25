@@ -19,7 +19,7 @@
             margin-top: 30px;
             width: 100%;
         }
-        h2, h3, h4 {
+        h1, h2, h3, h4 {
             margin-top: 0;
             margin-bottom: 0;
         }
@@ -44,9 +44,11 @@
 
         var newly_connected = 1;
         var observations;
+        var observations_mini;
         socket.on('observations', function(msg) {
             if (msg.id == me){
                 observations = msg.observations;
+                observations_mini = msg.observations_mini;
 
                 plot_axis("top");
                 plot_horizons();
@@ -88,7 +90,33 @@
                 while (last < stop) {
                     last += step;
                     values.push(event_flags[name]);
-                    event_flags[name] = 0;
+                    //event_flags[name] = 0;
+                }
+                callback(null, values = values.slice((start - stop) / step));
+            }, name);
+        }
+        function fetch_event_mini(name) {
+            if (newly_connected == 1) {
+                var values = observations_mini[name];
+            }
+            else {
+                var values = [];
+            }
+            return mini_context.metric(function(start, stop, step, callback) {
+                if (newly_connected == 1){
+                    var last = stop;
+                }
+                else{
+                    var last = start;
+                }
+
+                start = +start;
+                stop = +stop;
+
+                while (last < stop) {
+                    last += step;
+                    values.push(event_flags[name]);
+                    //event_flags[name] = 0;
                 }
                 callback(null, values = values.slice((start - stop) / step));
             }, name);
@@ -98,7 +126,11 @@
         var context = cubism.context()
                 .serverDelay(30 * 1000) // allow 30 seconds of collection lag
                 .step(2 * 60 * 1000) // 2m per value
-                .size(960); // fetch n values
+                .size(945); // fetch n values
+        var mini_context = cubism.context()
+                .serverDelay(30 * 1000) // allow 30 seconds of collection lag
+                .step(30 * 1000) // 30s per value
+                .size(165); // fetch n values
 
         function plot_axis(orient){
             // Plot the event graph axis with d3
@@ -107,12 +139,20 @@
                     .attr("class", "axis")
                     .call(context.axis().orient(orient));
             });
+            d3.select("#mini-event-graph-axis-"+orient).call(function(div) {
+                div.append("div")
+                    .attr("class", "axis")
+                    .call(mini_context.axis()
+                        .orient(orient)
+                        .ticks(d3.time.minutes, 30)
+                    );
+            });
         }
 
         function plot_horizons(){
             // Plot the event graph axis with d3
             d3.select("#event-graph").call(function(div) {
-                div.selectAll(".horizon")
+                    div.selectAll("#event-graph > .horizon")
                     .data(events.map(fetch_event))
                     .enter().append("div")
                     .attr("class", "horizon")
@@ -120,15 +160,30 @@
                         .format("")
                         .height(75)
                         .format(d3.format())
-                        .colors(["#4122BD", "#352BB6", "#2A34AF", "#1E3EA9", "#1347A2", "#08519C", "#065685", "#045C6F", "#036158", "#016742", "#006D2C", "#26712D", "#4D762F", "#747B30", "#9B8032", "#C28534", "#C36A2D", "#C44F27", "#C53420", "#C71A1A"])
+                        .colors(["#4122BD", "#352BB6", "#2A34AF", "#1E3EA9", "#1347A2", "#08519C", "#065685", "#045C6F", "#036158", "#016742", "#006D2C", "#2F7C27", "#5E8C22", "#8E9B1E", "#BDAB19", "#EDBB15", "#E9AA16", "#E69A17", "#E38918", "#E07919", "#D96119", "#D34919", "#CD3119", "#C71A1A"])
+                        .extent([0, 100])
                     )
                     .call(context.rule());
+            });
+            d3.select("#mini-event-graph").call(function(div) {
+                    div.selectAll("#mini-event-graph > .horizon")
+                    .data(events.map(fetch_event_mini))
+                    .enter().append("div")
+                    .attr("class", "horizon")
+                    .call(mini_context.horizon()
+                        .format("")
+                        .height(75)
+                        .format(d3.format())
+                        .colors(["#4122BD", "#352BB6", "#2A34AF", "#1E3EA9", "#1347A2", "#08519C", "#065685", "#045C6F", "#036158", "#016742", "#006D2C", "#2F7C27", "#5E8C22", "#8E9B1E", "#BDAB19", "#EDBB15", "#E9AA16", "#E69A17", "#E38918", "#E07919", "#D96119", "#D34919", "#CD3119", "#C71A1A"])
+                        .extent([0, 100])
+                    )
+                    .call(mini_context.rule());
             });
             newly_connected = 0;
         }
 
         context.on("focus", function(i) {
-            d3.selectAll(".value").style("right", i == null ? null : context.size() - i + "px");
+            d3.selectAll("#event-graph > .horizon > .value").style("right", i == null ? null : context.size() - i + "px");
         });
 
     </script>
@@ -137,17 +192,37 @@
   <div class="container">
   <div class="row">
     <div class="col-md-2">
+        <h1>Poisson</h1>
+    </div>
+    <div class="col-md-3">
+        <h4>Location</h4>
+        <h3><p>Sam and Tom Industrys</p></h3>
+    </div>
+    <div class="col-md-1">
         <h4>Events</h4>
         <h3><p id="event-count">{{ count }}</p></h3>
+    </div>
+    <div class="col-md-3">
         <h4>Last Event</h4>
         <h3><p id="last-event">{{ last_event }}</p></h3>
+    </div>
+    <div class="col-md-2">
         <h4>Timespan</h4>
         <h3><p id="timespan">{{ first_event }}</p></h3>
     </div>
+    <div class="col-md-1">
+    </div>
+  </div>
+  <div class="row">
     <div class="col-md-10">
         <div id="event-graph-axis-top"></div>
         <div id="event-graph"></div>
         <div id="event-graph-axis-bottom"></div>
+    </div>
+    <div class="col-md-2">
+        <div id="mini-event-graph-axis-top"></div>
+        <div id="mini-event-graph"></div>
+        <div id="mini-event-graph-axis-bottom"></div>
     </div>
   </div>
   </div>

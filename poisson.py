@@ -13,8 +13,11 @@ from redis import Redis
 app = Flask(__name__)
 socketio = SIO(app)
 
-MAX_EVENTS = 960 # Number of events to display (send to client) on load
+MAX_EVENTS = 945 # Number of events to display (send to client) on load
 STEP_seconds = 2*60
+
+MINIMAX_EVENTS = 165
+MINISTEP_seconds = 30
 
 @app.route('/')
 def home():
@@ -114,22 +117,28 @@ def client_connected(message):
     current_ts = int(current_dt.strftime('%s'))
 
     observations = {}
+    mini_observations = {}
     for event_name in members:
         # TODO Ideally we'd like to send over sparse lists
         observations[event_name] = [0] * MAX_EVENTS
+        mini_observations[event_name] = [0] * MINIMAX_EVENTS
         for event_ts, event_value in r_conn.zrange(event_name+"_ts", 0, -1, withscores=True):
             step_bin = int(math.floor((current_ts - int(event_ts)) / STEP_seconds))
+            mini_step_bin = int(math.floor((current_ts - int(event_ts)) / MINISTEP_seconds))
             if step_bin < 0:
                 continue
             try:
                 observations[event_name][step_bin] = int(event_value)
+                mini_observations[event_name][mini_step_bin] = int(event_value)
             except IndexError:
                 pass
         observations[event_name] = observations[event_name][::-1]
+        mini_observations[event_name] = mini_observations[event_name][::-1]
 
     socketio.emit('observations', {
         'id': message["id"],
-        'observations' : observations
+        'observations' : observations,
+        'observations_mini' : mini_observations,
     }, namespace="/poisson")
     print ("Client %s Connected. Sent event list and observations." % message["id"])
     #return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
