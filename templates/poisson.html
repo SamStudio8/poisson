@@ -90,7 +90,6 @@
                 while (last < stop) {
                     last += step;
                     values.push(event_flags[name]);
-                    //event_flags[name] = 0;
                 }
                 callback(null, values = values.slice((start - stop) / step));
             }, name);
@@ -116,7 +115,6 @@
                 while (last < stop) {
                     last += step;
                     values.push(event_flags[name]);
-                    //event_flags[name] = 0;
                 }
                 callback(null, values = values.slice((start - stop) / step));
             }, name);
@@ -157,7 +155,6 @@
                     .enter().append("div")
                     .attr("class", "horizon")
                     .call(context.horizon()
-                        .format("")
                         .height(75)
                         .format(d3.format())
                         .colors(["#4122BD", "#352BB6", "#2A34AF", "#1E3EA9", "#1347A2", "#08519C", "#065685", "#045C6F", "#036158", "#016742", "#006D2C", "#2F7C27", "#5E8C22", "#8E9B1E", "#BDAB19", "#EDBB15", "#E9AA16", "#E69A17", "#E38918", "#E07919", "#D96119", "#D34919", "#CD3119", "#C71A1A"])
@@ -171,7 +168,6 @@
                     .enter().append("div")
                     .attr("class", "horizon")
                     .call(mini_context.horizon()
-                        .format("")
                         .height(75)
                         .format(d3.format())
                         .colors(["#4122BD", "#352BB6", "#2A34AF", "#1E3EA9", "#1347A2", "#08519C", "#065685", "#045C6F", "#036158", "#016742", "#006D2C", "#2F7C27", "#5E8C22", "#8E9B1E", "#BDAB19", "#EDBB15", "#E9AA16", "#E69A17", "#E38918", "#E07919", "#D96119", "#D34919", "#CD3119", "#C71A1A"])
