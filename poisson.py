@@ -10,6 +10,8 @@ from flask_socketio import emit
 
 from redis import Redis
 
+from config import EVENT_CONFIGS
+
 app = Flask(__name__)
 socketio = SIO(app)
 
@@ -108,7 +110,8 @@ def client_connected(message):
     socketio.emit('events', {
         'id': message["id"],
         'event_members': sorted(list(members)),
-        'event_flags': flags
+        'event_flags': flags,
+        'event_configs': EVENT_CONFIGS,
     }, namespace="/poisson")
 
     current_dt = datetime.now()

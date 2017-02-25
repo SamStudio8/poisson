@@ -35,23 +35,39 @@
 
         var events;
         var event_flags = {};
+        var event_configs = {};
+
         socket.on('events', function(msg) {
             if (msg.id == me){
                 events = msg.event_members
                 event_flags = msg.event_flags
+                event_configs = msg.event_configs
             }
+            for (var i = 0; i < events.length; i++) {
+                d3.select("#event-graphs").call(function(div) {
+                    div.append("div")
+                    .attr("id", "event-graph-"+events[i])
+                    .attr("class", "event-graph")
+                });
+                d3.select("#mini-event-graphs").call(function(div) {
+                    div.append("div")
+                    .attr("id", "mini-event-graph-"+events[i])
+                    .attr("class", "mini-event-graph")
+                });
+            };
         });
 
         var newly_connected = 1;
         var observations;
         var observations_mini;
+
         socket.on('observations', function(msg) {
             if (msg.id == me){
                 observations = msg.observations;
                 observations_mini = msg.observations_mini;
 
                 plot_axis("top");
-                plot_horizons();
+                events.map(plot_horizons);
                 plot_axis("bottom");
             }
         });
@@ -65,7 +81,17 @@
         socket.on('new-event', function(msg) {
             events.push(msg.event_name);
             event_flags[msg.event_name] = 0;
-            plot_horizons();
+            d3.select("#event-graphs").call(function(div) {
+                div.append("div")
+                    .attr("id", "event-graph-"+msg.event_name)
+                    .attr("class", "event-graph")
+            });
+            d3.select("#mini-event-graphs").call(function(div) {
+                div.append("div")
+                .attr("id", "mini-event-graph-"+msg.event_name)
+                .attr("class", "mini-event-graph")
+            });
+            events.map(plot_horizons);
         });
 
         // Fetch event data
@@ -132,12 +158,12 @@
 
         function plot_axis(orient){
             // Plot the event graph axis with d3
-            d3.select("#event-graph-axis-"+orient).call(function(div) {
+            d3.select("#event-graphs-axis-"+orient).call(function(div) {
                 div.append("div")
                     .attr("class", "axis")
                     .call(context.axis().orient(orient));
             });
-            d3.select("#mini-event-graph-axis-"+orient).call(function(div) {
+            d3.select("#mini-event-graphs-axis-"+orient).call(function(div) {
                 div.append("div")
                     .attr("class", "axis")
                     .call(mini_context.axis()
@@ -147,31 +173,42 @@
             });
         }
 
-        function plot_horizons(){
+        function plot_horizons(event_name){
             // Plot the event graph axis with d3
-            d3.select("#event-graph").call(function(div) {
-                    div.selectAll("#event-graph > .horizon")
-                    .data(events.map(fetch_event))
+            var colours = ["#4122BD", "#352BB6", "#2A34AF", "#1E3EA9", "#1347A2", "#08519C", "#065685", "#045C6F", "#036158", "#016742", "#006D2C", "#2F7C27", "#5E8C22", "#8E9B1E", "#BDAB19", "#EDBB15", "#E9AA16", "#E69A17", "#E38918", "#E07919", "#D96119", "#D34919", "#CD3119", "#C71A1A"];
+            var extent = [0,100];
+
+            if (event_name in event_configs){
+                if ("colours" in event_configs[event_name])
+                    colours = event_configs[event_name]["colours"];
+                if ("extent" in event_configs[event_name])
+                    extent = event_configs[event_name]["extent"];
+            }
+
+            d3.selectAll("#event-graph-" + event_name).call(function(div) {
+                div.selectAll("#event-graph-" + event_name + " > .horizon")
+                    .data([fetch_event(event_name)])
                     .enter().append("div")
                     .attr("class", "horizon")
                     .call(context.horizon()
                         .height(75)
                         .format(d3.format())
-                        .colors(["#4122BD", "#352BB6", "#2A34AF", "#1E3EA9", "#1347A2", "#08519C", "#065685", "#045C6F", "#036158", "#016742", "#006D2C", "#2F7C27", "#5E8C22", "#8E9B1E", "#BDAB19", "#EDBB15", "#E9AA16", "#E69A17", "#E38918", "#E07919", "#D96119", "#D34919", "#CD3119", "#C71A1A"])
-                        .extent([0, 100])
+                        .colors(colours)
+                        .extent(extent)
                     )
                     .call(context.rule());
             });
-            d3.select("#mini-event-graph").call(function(div) {
-                    div.selectAll("#mini-event-graph > .horizon")
-                    .data(events.map(fetch_event_mini))
+
+            d3.selectAll("#mini-event-graph-" + event_name).call(function(div) {
+                div.selectAll("#mini-event-graph-" + event_name + " > .horizon")
+                    .data([fetch_event_mini(event_name)])
                     .enter().append("div")
                     .attr("class", "horizon")
                     .call(mini_context.horizon()
                         .height(75)
                         .format(d3.format())
-                        .colors(["#4122BD", "#352BB6", "#2A34AF", "#1E3EA9", "#1347A2", "#08519C", "#065685", "#045C6F", "#036158", "#016742", "#006D2C", "#2F7C27", "#5E8C22", "#8E9B1E", "#BDAB19", "#EDBB15", "#E9AA16", "#E69A17", "#E38918", "#E07919", "#D96119", "#D34919", "#CD3119", "#C71A1A"])
-                        .extent([0, 100])
+                        .colors(colours)
+                        .extent(extent)
                     )
                     .call(mini_context.rule());
             });
@@ -179,7 +216,7 @@
         }
 
         context.on("focus", function(i) {
-            d3.selectAll("#event-graph > .horizon > .value").style("right", i == null ? null : context.size() - i + "px");
+            d3.selectAll(".event-graph > .horizon > .value").style("right", i == null ? null : context.size() - i + "px");
         });
 
     </script>
@@ -211,14 +248,14 @@
   </div>
   <div class="row">
     <div class="col-md-10">
-        <div id="event-graph-axis-top"></div>
-        <div id="event-graph"></div>
-        <div id="event-graph-axis-bottom"></div>
+        <div id="event-graphs-axis-top"></div>
+        <div id="event-graphs"></div>
+        <div id="event-graphs-axis-bottom"></div>
     </div>
     <div class="col-md-2">
-        <div id="mini-event-graph-axis-top"></div>
-        <div id="mini-event-graph"></div>
-        <div id="mini-event-graph-axis-bottom"></div>
+        <div id="mini-event-graphs-axis-top"></div>
+        <div id="mini-event-graphs"></div>
+        <div id="mini-event-graphs-axis-bottom"></div>
     </div>
   </div>
   </div>

@@ -1,0 +1,5 @@
+EVENT_CONFIGS = {
+    "hoot": {
+        "extent": [0,10]
+    },
+}
