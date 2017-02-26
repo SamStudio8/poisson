@@ -52,6 +52,9 @@ def add_observation(event_name, event_value):
     # Push new timestamp record to this event's member list
     r_conn.zadd(event_name+"_ts", timestamp, event_value)
 
+    if float(event_value) == 0:
+        event_value = 0.001
+
     # Announce new observation to clients
     socketio.emit('new-observation', {
                 'data': event_value,
