@@ -129,8 +129,13 @@ def client_connected(message):
     # Add missing events
     events_sorted.extend(events_to_add)
 
-    for event_name in events_sorted:
+    flags = {}
+    for i, event_name in enumerate(events_sorted):
+        if event_name in EVENT_TRANSLATIONS:
+            event_name = EVENT_TRANSLATIONS[event_name]
+            events_sorted[i] = event_name
 
+        flags[event_name] = 0
         # TODO Ideally we'd like to send over sparse lists
         observations[event_name] = [0] * MAX_EVENTS
         mini_observations[event_name] = [0] * MINIMAX_EVENTS
@@ -154,7 +159,7 @@ def client_connected(message):
         'id': message["id"],
         'observations' : observations,
         'observations_mini' : mini_observations,
-        'event_members': sorted(list(members)),
+        'event_members': events_sorted,
         'event_configs': EVENT_CONFIGS,
         'event_flags': flags,
     }, namespace="/poisson")
