@@ -175,12 +175,15 @@
             // Plot the event graph axis with d3
             var colours = ["#431FD1", "#382ED1", "#2D3DD1", "#234CD1", "#256D74", "#288F18", "#8CA71A", "#F0BF1D", "#E49C1E", "#D97A20", "#CB4D20", "#BD2020"];
             var extent = [0,100];
+            var title = event_name;
 
             if (event_name in event_configs){
                 if ("colours" in event_configs[event_name])
                     colours = event_configs[event_name]["colours"];
                 if ("extent" in event_configs[event_name])
                     extent = event_configs[event_name]["extent"];
+                if ("title" in event_configs[event_name])
+                    title = event_configs[event_name]["title"];
             }
 
             d3.selectAll("#event-graph-" + event_name).call(function(div) {
@@ -193,6 +196,7 @@
                         .format(d3.format(",.1f"))
                         .colors(colours)
                         .extent(extent)
+                        .title(title)
                     )
                     .call(context.rule());
             });
@@ -207,6 +211,7 @@
                         .format(d3.format(",.1f"))
                         .colors(colours)
                         .extent(extent)
+                        .title(title)
                     )
                     .call(mini_context.rule());
             });

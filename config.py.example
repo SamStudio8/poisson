@@ -1,11 +1,8 @@
 EVENT_CONFIGS = {
     "hoot": {
-        "extent": [0,10]
+        "extent": [0,10],
+        "title": "hoot_label"
     },
-}
-
-EVENT_TRANSLATIONS = {
-    "hoot": "hoot_label",
 }
 
 EVENT_ORDER = [
