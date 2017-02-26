@@ -9,6 +9,7 @@ from flask_socketio import SocketIO as SIO
 from flask_socketio import emit
 
 from redis import Redis
+from redis.exceptions import ResponseError
 
 from config import EVENT_CONFIGS, EVENT_ORDER
 
@@ -66,6 +67,7 @@ def add_observation(event_name, event_value):
 
 @app.route('/json/', methods=["POST"])
 def process_json():
+    msg_list = []
     payload = request.get_json()
     if not payload:
         return Response(json.dumps({"status": "NOTOK"}), status=400, mimetype='application/json')
@@ -76,10 +78,14 @@ def process_json():
         except ValueError:
             # "OH WELL THAT'S IT, ANOTHER OWL BASED FUCK UP, SAM"
             pass
+        except ResponseError as e:
+            # "value is not a valid float" after unplugged 
+            msg_list.append("%s: %s" % key, str(e))
+            pass
         except Exception as e:
-            print e
-            return Response(json.dumps({"status": "NOTOK"}), status=400, mimetype='application/json')
-    return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
+            #return Response(json.dumps({"status": "NOTOK"}), status=400, mimetype='application/json')
+            pass
+    return Response(json.dumps({"status": "OK", "messages": msg_list}), status=200, mimetype='application/json')
 
 @app.route('/data/<event_name>', defaults={'value': 1})
 @app.route('/data/<event_name>/<value>')

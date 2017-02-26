@@ -173,7 +173,7 @@
 
         function plot_horizons(event_name){
             // Plot the event graph axis with d3
-            var colours = ["#431FD1", "#382ED1", "#2D3DD1", "#234CD1", "#256D74", "#288F18", "#8CA71A", "#F0BF1D", "#E49C1E", "#D97A20", "#CB4D20", "#BD2020"];
+            var colours = ["#000000", "#000000", "#431FD1", "#382ED1", "#2D3DD1", "#234CD1", "#256D74", "#288F18", "#8CA71A", "#F0BF1D", "#E49C1E", "#D97A20", "#CB4D20", "#BD2020"];
             var extent = [0,100];
             var title = event_name;
             var height = 75;
@@ -240,13 +240,13 @@
         <h4>Events</h4>
         <h3><p id="event-count">{{ count }}</p></h3>
     </div>
+    <div class="col-md-2">
+        <h4>Resolution</h4>
+        <h3><p id="resolution">2min / 30sec</p></h3>
+    </div>
     <div class="col-md-3">
         <h4>Last Event</h4>
         <h3><p id="last-event">{{ last_event }}</p></h3>
-    </div>
-    <div class="col-md-2">
-        <h4>Timespan</h4>
-        <h3><p id="timespan">{{ first_event }}</p></h3>
     </div>
     <div class="col-md-1">
     </div>
