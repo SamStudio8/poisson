@@ -52,6 +52,9 @@ def add_observation(event_name, event_value):
     # Push new timestamp record to this event's member list
     r_conn.zadd(event_name+"_ts", timestamp, event_value)
 
+    if event_name in EVENT_TRANSLATIONS:
+        event_name = EVENT_TRANSLATIONS[event_name]
+
     # Announce new observation to clients
     socketio.emit('new-observation', {
                 'data': event_value,
@@ -131,6 +134,7 @@ def client_connected(message):
 
     flags = {}
     for i, event_name in enumerate(events_sorted):
+        event_name_t = event_name
         if event_name in EVENT_TRANSLATIONS:
             event_name = EVENT_TRANSLATIONS[event_name]
             events_sorted[i] = event_name
@@ -139,7 +143,7 @@ def client_connected(message):
         # TODO Ideally we'd like to send over sparse lists
         observations[event_name] = [0] * MAX_EVENTS
         mini_observations[event_name] = [0] * MINIMAX_EVENTS
-        for event_ts, event_value in r_conn.zrange(event_name+"_ts", 0, -1, withscores=True):
+        for event_ts, event_value in r_conn.zrange(event_name_t+"_ts", 0, -1, withscores=True):
             step_bin = int(math.floor((current_ts - int(event_ts)) / STEP_seconds))
             mini_step_bin = int(math.floor((current_ts - int(event_ts)) / MINISTEP_seconds))
             if step_bin < 0:
