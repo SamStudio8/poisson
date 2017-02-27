@@ -9,3 +9,5 @@ EVENT_ORDER = [
     "hoot",
     "meow",
 ]
+
+EVENT_AUTH_KEY = "secret_key"

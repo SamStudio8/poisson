@@ -11,7 +11,7 @@ from flask_socketio import emit
 from redis import Redis
 from redis.exceptions import ResponseError
 
-from config import EVENT_CONFIGS, EVENT_ORDER
+from config import EVENT_CONFIGS, EVENT_ORDER, EVENT_AUTH_KEY
 
 app = Flask(__name__)
 socketio = SIO(app)
@@ -71,6 +71,8 @@ def process_json():
     payload = request.get_json()
     if not payload:
         return Response(json.dumps({"status": "NOTOK"}), status=400, mimetype='application/json')
+    if EVENT_AUTH_KEY not in payload:
+        return Response(json.dumps({"status": "NOTOK"}), status=403, mimetype='application/json')
 
     for key in payload:
         try:
@@ -90,23 +92,25 @@ def process_json():
 @app.route('/data/<event_name>', defaults={'value': 1})
 @app.route('/data/<event_name>/<value>')
 def data(event_name, value):
-    try:
-        add_observation(event_name, value)
-    except Exception as e:
-        print(e)
-        return Response(json.dumps({"status": "NOTOK"}), status=400, mimetype='application/json')
-    return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
+    #try:
+    #    add_observation(event_name, value)
+    #except Exception as e:
+    #    print(e)
+    #    return Response(json.dumps({"status": "NOTOK"}), status=400, mimetype='application/json')
+    #return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
+    return Response(json.dumps({"status": "NOTOK"}), status=403, mimetype='application/json')
 
 @app.route('/reset/')
 def reset():
-    r_conn.set("events-observed", 0)
-    r_conn.set("first-event", timestamp)
-    r_conn.delete("last-event")
-    members = list(r_conn.smembers("events"))
-    for m in members:
-        r_conn.delete(m+"_ts")
-    r_conn.delete("events")
-    return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
+    #r_conn.set("events-observed", 0)
+    #r_conn.set("first-event", timestamp)
+    #r_conn.delete("last-event")
+    #members = list(r_conn.smembers("events"))
+    #for m in members:
+    #    r_conn.delete(m+"_ts")
+    #r_conn.delete("events")
+    #return Response(json.dumps({"status": "OK"}), status=200, mimetype='application/json')
+    return Response(json.dumps({"status": "NOTOK"}), status=403, mimetype='application/json')
 
 @socketio.on('connected', namespace='/poisson')
 def client_connected(message):
