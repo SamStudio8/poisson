@@ -18,6 +18,7 @@ socketio = SIO(app)
 
 MAX_EVENTS = 945 # Number of events to display (send to client) on load
 STEP_seconds = 2*60
+TIMESPAN = MAX_EVENTS * STEP_seconds
 
 MINIMAX_EVENTS = 165
 MINISTEP_seconds = 30
@@ -121,6 +122,7 @@ def client_connected(message):
     current_dt.replace(second=int(math.floor(current_dt.second/30)*30), microsecond=0)
     resolution = timedelta(seconds=30)
     current_ts = int(current_dt.strftime('%s'))
+    start_ts = current_ts - TIMESPAN
 
     observations = {}
     mini_observations = {}
@@ -148,7 +150,9 @@ def client_connected(message):
         # TODO Ideally we'd like to send over sparse lists
         observations[event_name] = [0] * MAX_EVENTS
         mini_observations[event_name] = [0] * MINIMAX_EVENTS
-        for event_ts, event_value in r_conn.zrange(event_name+"_ts", 0, -1, withscores=True):
+        keys = r_conn.zrangebylex(event_name+"_ts", '['+str(start_ts), '['+str(current_ts))
+        first_key = r_conn.zrank(event_name+"_ts", keys[-1])
+        for event_ts, event_value in r_conn.zrange(event_name+"_ts", -(first_key), -1, withscores=True):
             step_bin = int(math.floor((current_ts - int(event_ts)) / STEP_seconds))
             mini_step_bin = int(math.floor((current_ts - int(event_ts)) / MINISTEP_seconds))
             if step_bin < 0:
